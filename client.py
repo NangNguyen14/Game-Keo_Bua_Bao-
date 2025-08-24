@@ -1,4 +1,24 @@
-# --- Nút hiện đại ---
+import threading
+import json
+import tkinter as tk
+from tkinter import messagebox
+
+# --- Tiện ích JSON dòng ---
+def send_msg(sock: socket.socket, obj: dict):
+    data = (json.dumps(obj) + "\n").encode("utf-8")
+    sock.sendall(data)
+
+def recv_line(sock: socket.socket):
+    buf = []
+    while True:
+        ch = sock.recv(1)
+        if not ch:
+            return None
+        if ch == b"\n":
+            return b"".join(buf).decode("utf-8")
+        buf.append(ch)
+        
+# --- Giao diện đẳng cấp ---
 class ModernButton(tk.Button):
     def __init__(self, master=None, **kwargs):
         super().__init__(master, **kwargs)
@@ -93,25 +113,6 @@ self.lbl_result = tk.Label(self.card, text="Kết quả: ...", font=("Segoe UI",
             color = f"#{nr>>8:02x}{ng>>8:02x}{nb>>8:02x}"
             canvas.create_line(0, i, width, i, fill=color)
             import socket
-import threading
-import json
-import tkinter as tk
-from tkinter import messagebox
-
-# --- Tiện ích JSON dòng ---
-def send_msg(sock: socket.socket, obj: dict):
-    data = (json.dumps(obj) + "\n").encode("utf-8")
-    sock.sendall(data)
-
-def recv_line(sock: socket.socket):
-    buf = []
-    while True:
-        ch = sock.recv(1)
-        if not ch:
-            return None
-        if ch == b"\n":
-            return b"".join(buf).decode("utf-8")
-        buf.append(ch)
         # --- Connect ---
     def connect(self):
         if self.connected:
