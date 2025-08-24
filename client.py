@@ -92,3 +92,127 @@ self.lbl_result = tk.Label(self.card, text="Kết quả: ...", font=("Segoe UI",
             nb = int(b1 + (b_ratio * i))
             color = f"#{nr>>8:02x}{ng>>8:02x}{nb>>8:02x}"
             canvas.create_line(0, i, width, i, fill=color)
+            import socket
+import threading
+import json
+import tkinter as tk
+from tkinter import messagebox
+
+# --- Tiện ích JSON dòng ---
+def send_msg(sock: socket.socket, obj: dict):
+    data = (json.dumps(obj) + "\n").encode("utf-8")
+    sock.sendall(data)
+
+def recv_line(sock: socket.socket):
+    buf = []
+    while True:
+        ch = sock.recv(1)
+        if not ch:
+            return None
+        if ch == b"\n":
+            return b"".join(buf).decode("utf-8")
+        buf.append(ch)
+        # --- Connect ---
+    def connect(self):
+        if self.connected:
+            return
+        host = "127.0.0.1"
+        port = 5000
+        name = self.ent_name.get().strip() or "Player"
+        try:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock.connect((host, port))
+            send_msg(self.sock, {"type": "join", "name": name})
+            self.connected = True
+            self.btn_connect.config(state="disabled", text="Đã kết nối")
+            self.set_status("Đã kết nối. Đang chờ ghép cặp...")
+            # Thread nhận dữ liệu
+            self.reader_thread = threading.Thread(target=self.reader_loop, daemon=True)
+            self.reader_thread.start()
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Không kết nối được: {e}")
+
+    def reader_loop(self):
+        try:
+            while True:
+                line = recv_line(self.sock)
+                if line is None:
+                    self.on_server_disconnected()
+                    return
+                msg = json.loads(line)
+                self.handle_msg(msg)
+        except Exception:
+            self.on_server_disconnected()
+
+    # --- Xử lý message ---
+    def handle_msg(self, msg: dict):
+        t = msg.get("type")
+        if t == "start":
+            self.opponent = msg.get("opponent", "Đối thủ")
+            self.set_status(f"Đã ghép cặp với: {self.opponent}. Chọn nước đi!")
+            self.enable_move_buttons(True)
+            self.reset_round_labels()
+        elif t == "round_result":
+            you = msg.get("you", "...")
+            opp = msg.get("opponent", "...")
+            outcome = msg.get("outcome", "draw")
+            self.lbl_you.config(text=f"Bạn: {you}")
+            self.lbl_opp.config(text=f"Đối thủ: {opp}")
+            colors = {"win": "green", "lose": "red", "draw": "orange"}
+            text = {"win": "🎉 Bạn THẮNG!", "lose": "😢 Bạn THUA", "draw": "🤝 HOÀ"}
+            self.lbl_result.config(text=text.get(outcome, outcome), fg=colors.get(outcome, "#444"))
+            self.enable_move_buttons(True)
+        elif t == "opponent_left":
+            self.set_status("Đối thủ đã thoát. Đang chờ ghép cặp...")
+            self.enable_move_buttons(False)
+            self.reset_round_labels()
+
+    # --- Gửi ---
+    def send_move(self, choice: str):
+        if not self.connected:
+            return
+        send_msg(self.sock, {"type": "move", "choice": choice})
+        self.enable_move_buttons(False)
+        self.lbl_you.config(text=f"Bạn: {choice}")
+        self.lbl_opp.config(text="Đối thủ: (đang chờ...)")
+        self.lbl_result.config(text="Kết quả: (đang xử lý...)", fg="#666")
+
+    # --- UI tiện ích ---
+    def set_status(self, text):
+        self.lbl_status.config(text=text)
+
+    def enable_move_buttons(self, enable: bool):
+        state = "normal" if enable else "disabled"
+        self.btn_keo.config(state=state)
+        self.btn_bua.config(state=state)
+        self.btn_bao.config(state=state)
+
+    def reset_round_labels(self):
+        self.lbl_you.config(text="Bạn: ...", fg="#333")
+        self.lbl_opp.config(text="Đối thủ: ...", fg="#333")
+        self.lbl_result.config(text="Kết quả: ...", fg="#444")
+
+    def on_server_disconnected(self):
+        self.connected = False
+        try:
+            if self.sock:
+                self.sock.close()
+        except:
+            pass
+        self.sock = None
+        self.enable_move_buttons(False)
+        self.set_status("⚠ Mất kết nối server!")
+
+    def on_close(self):
+        try:
+            if self.sock:
+                self.sock.close()
+        except:
+            pass
+        self.root.destroy()
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = RPSClientApp(root)
+    root.mainloop()
+    
