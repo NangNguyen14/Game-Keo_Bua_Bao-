@@ -60,3 +60,21 @@ class RPSClientApp:
         # --- Label kết quả ---
         self.lbl_you = tk.Label(self.card, text="Bạn: ...", font=("Segoe UI", 11), bg="white", fg="#333")
         self.lbl_opp = tk.Label(self.card, text="Đối thủ: ...", font=("Segoe UI", 11), bg="white", fg="#333")
+self.lbl_result = tk.Label(self.card, text="Kết quả: ...", font=("Segoe UI", 16, "bold"), bg="white", fg="#444")
+
+        self.lbl_you.pack(pady=6)
+        self.lbl_opp.pack(pady=6)
+        self.lbl_result.pack(pady=8)
+
+        # Nút connect chỉ cần tên
+        frm_name = tk.Frame(self.card, bg="white")
+        frm_name.pack(pady=10)
+        tk.Label(frm_name, text="Tên:", bg="white", fg="#444", font=("Segoe UI", 11)).pack(side="left")
+        self.ent_name = tk.Entry(frm_name, font=("Segoe UI", 11), width=18)
+        self.ent_name.insert(0, "Player")
+        self.ent_name.pack(side="left", padx=8)
+        self.btn_connect = ModernButton(frm_name, text="Kết nối", command=self.connect)
+        self.btn_connect.pack(side="left")
+
+        self.enable_move_buttons(False)
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
