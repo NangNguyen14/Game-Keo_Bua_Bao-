@@ -22,4 +22,26 @@ class ModernButton(tk.Button):
 
     def on_leave(self, e):
         self.config(bg="#6a5acd", fg="white")  # Trở về màu gốc
+class RPSClientApp: 
+    def __init__(self, root): # Khởi tạo giao diện
+        self.root = root
+        self.root.title("✊✂🖐 Kéo Búa Bao Online") # Tiêu đề cửa sổ
+        self.root.geometry("500x420") # Kích thước cửa sổ
+        self.sock = None
+        self.reader_thread = None
+        self.connected = False
+        self.opponent = None
+
+        # --- Gradient nền ---
+        self.bg = tk.Canvas(root, width=500, height=420) # Canvas để vẽ gradient
+        self.bg.pack(fill="both", expand=True)
+        self.draw_gradient(self.bg, "#6a11cb", "#2575fc")  # tím -> xanh
+
+        # --- Container chính ---
+        self.card = tk.Frame(self.bg, bg="white", bd=0, relief="flat")
+        self.card.place(relx=0.5, rely=0.5, anchor="center", width=440, height=360)
+
+        # --- Thanh trạng thái ---
+        self.lbl_status = tk.Label(self.card, text="Chưa kết nối.", font=("Segoe UI", 12, "bold"), bg="white", fg="#333")
+        self.lbl_status.pack(pady=10)
 
